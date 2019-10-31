@@ -1805,12 +1805,12 @@
   .ui.stackable.grid > .column.row > .column,
   .ui.stackable.grid > .row > .column,
   .ui.stackable.grid > .column:not(.row),
-  .ui.grid > .stackable.stackable.row > .column {
+  .ui.grid > .stackable.stackable.stackable.row > .column {
     width: 100% !important;
     margin: 0 0 !important;
     -webkit-box-shadow: none !important;
             box-shadow: none !important;
-    padding: 1rem 1rem !important;
+    padding: 1rem 1rem;
   }
   .ui.stackable.grid:not(.vertically) > .row {
     margin: 0;
@@ -1998,24 +1998,24 @@
       Compact
 -----------------*/
 
-.ui.compact.grid > .column:not(.row),
-.ui.compact.grid > .row > .column {
+.ui.ui.ui.compact.grid > .column:not(.row),
+.ui.ui.ui.compact.grid > .row > .column {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
-.ui.compact.grid > * {
+.ui.ui.ui.compact.grid > * {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
 
 /* Row */
-.ui.compact.grid > .row {
+.ui.ui.ui.compact.grid > .row {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
 
 /* Columns */
-.ui.compact.grid > .column:not(.row) {
+.ui.ui.ui.compact.grid > .column:not(.row) {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }

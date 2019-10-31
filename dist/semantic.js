@@ -4366,6 +4366,8 @@ $.fn.calendar.settings = {
       if (text.length === 0) {
         return null;
       }
+      // Reverse date and month in some cases
+      text = settings.monthFirst ? text : text.replace(/[\/\-\.]/g,'/').replace(/([0-9]+)\/([0-9]+)/,'$2/$1');
       var textDate = new Date(text);
       if(!isNaN(textDate.getDate())) {
         return textDate;
@@ -7272,7 +7274,6 @@ $.fn.dropdown = function(parameters) {
           else {
             if(settings.allowAdditions) {
               module.set.selected(module.get.query());
-              module.remove.searchTerm();
             }
             else {
               module.remove.searchTerm();
@@ -8992,7 +8993,8 @@ $.fn.dropdown = function(parameters) {
                 }
               })
             ;
-          },
+            module.remove.searchTerm();
+          }
         },
 
         add: {
@@ -11866,10 +11868,7 @@ $.fn.modal = function(parameters) {
 
         can: {
           useFlex: function() {
-            return (settings.useFlex == 'auto')
-              ? settings.detachable && !module.is.ie()
-              : settings.useFlex
-            ;
+            return settings.useFlex && settings.detachable && !module.is.ie();
           },
           fit: function() {
             var
@@ -11978,18 +11977,25 @@ $.fn.modal = function(parameters) {
             }
           },
           modalOffset: function() {
-            var
-              width = module.cache.width,
-              height = module.cache.height
-            ;
-            $module
-              .css({
-                marginTop: (!$module.hasClass('aligned') && module.can.fit())
-                  ? -(height / 2)
-                  : 0,
-                marginLeft: -(width / 2)
-              })
-            ;
+            if (!settings.detachable) {
+              $module
+                .css({
+                  top: (!$module.hasClass('aligned') && module.can.fit())
+                    ? parseInt(($(window).height() / 2) + $(document).scrollTop() - ($module.height() - settings.padding))
+                    : $(document).scrollTop() + (settings.padding / 2),
+                  marginLeft: -(module.cache.width / 2)
+                }) 
+              ;
+            } else {
+              $module
+                .css({
+                  marginTop: (!$module.hasClass('aligned') && module.can.fit())
+                    ? -(module.cache.height / 2)
+                    : 0,
+                  marginLeft: -(module.cache.width / 2)
+                }) 
+              ;
+            }
             module.verbose('Setting modal offset for legacy mode');
           },
           screenHeight: function() {
@@ -16696,6 +16702,7 @@ $.fn.rating = function(parameters) {
         className       = settings.className,
         metadata        = settings.metadata,
         selector        = settings.selector,
+        cssVars         = settings.cssVars,
 
         eventNamespace  = '.' + namespace,
         moduleNamespace = 'module-' + namespace,
@@ -16897,10 +16904,17 @@ $.fn.rating = function(parameters) {
         set: {
           rating: function(rating) {
             var
-              ratingIndex = (rating - 1 >= 0)
-                ? (rating - 1)
-                : 0,
-              $activeIcon = $icon.eq(ratingIndex)
+              ratingIndex = Math.floor(
+                (rating - 1 >= 0)
+                  ? (rating - 1)
+                  : 0
+              ),
+              $activeIcon = $icon.eq(ratingIndex),
+              $partialActiveIcon = rating <= 1
+                ? $activeIcon
+                : $activeIcon.next()
+              ,
+              filledPercentage = (rating % 1) * 100
             ;
             $module
               .removeClass(className.selected)
@@ -16908,14 +16922,30 @@ $.fn.rating = function(parameters) {
             $icon
               .removeClass(className.selected)
               .removeClass(className.active)
+              .removeClass(className.partiallyActive)
             ;
             if(rating > 0) {
               module.verbose('Setting current rating to', rating);
               $activeIcon
                 .prevAll()
                 .addBack()
-                  .addClass(className.active)
+                .addClass(className.active)
               ;
+              if($activeIcon.next() && rating % 1 !== 0) {
+                $partialActiveIcon
+                  .addClass(className.partiallyActive)
+                  .addClass(className.active)
+                ;
+                $partialActiveIcon
+                  .css(cssVars.filledCustomPropName, filledPercentage + '%')
+                ;
+                if($partialActiveIcon.css('backgroundColor') === 'transparent') {
+                  $partialActiveIcon
+                    .removeClass(className.partiallyActive)
+                    .removeClass(className.active)
+                  ;
+                }
+              }
             }
             if(!module.is.initialLoad()) {
               settings.onRate.call(element, rating);
@@ -17148,7 +17178,12 @@ $.fn.rating.settings = {
     active   : 'active',
     disabled : 'disabled',
     selected : 'selected',
-    loading  : 'loading'
+    loading  : 'loading',
+    partiallyActive : 'partial'
+  },
+
+  cssVars : {
+    filledCustomPropName : '--full'
   },
 
   selector  : {
@@ -21658,7 +21693,7 @@ $.fn.tab = function(parameters) {
             initializedHistory = true;
           }
 
-          if(module.determine.activeTab() == null) {
+          if(instance === undefined && module.determine.activeTab() == null) {
             module.debug('No active tab detected, setting first tab active', module.get.initialPath());
             module.changeTab(module.get.initialPath());
           };
